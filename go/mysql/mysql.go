@@ -303,14 +303,14 @@ func (conn *Connection) FetchNext() (row []sqltypes.Value, err error) {
 	if vtrow.has_error != 0 {
 		return nil, conn.lastError("")
 	}
-	rowPtr := (*[maxSize]*C.char)(unsafe.Pointer(vtrow.mysql_row))
-	if rowPtr == nil {
+	if vtrow.mysql_row == nil {
 		return nil, nil
 	}
 	colCount := int(conn.c.num_fields)
-	cfields := (*[maxSize]C.MYSQL_FIELD)(unsafe.Pointer(conn.c.fields))
+	rowPtr := (*(*[maxSize]*C.char)(unsafe.Pointer(vtrow.mysql_row)))[:colCount]
+	cfields := (*(*[maxSize]C.MYSQL_FIELD)(unsafe.Pointer(conn.c.fields)))[:colCount]
 	row = make([]sqltypes.Value, colCount)
-	lengths := (*[maxSize]uint64)(unsafe.Pointer(vtrow.lengths))
+	lengths := (*(*[maxSize]uint64)(unsafe.Pointer(vtrow.lengths)))[:colCount]
 	totalLength := uint64(0)
 	for i := 0; i < colCount; i++ {
 		totalLength += lengths[i]
