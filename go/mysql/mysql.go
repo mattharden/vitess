@@ -316,14 +316,14 @@ func (conn *Connection) FetchNext() (row []sqltypes.Value, err error) {
 		totalLength += lengths[i]
 	}
 	arena := make([]byte, 0, int(totalLength))
-	for i := 0; i < colCount; i++ {
-		if rowPtr[i] == nil {
+	for i, colPtr := range rowPtr {
+		if colPtr == nil {
 			continue
 		}
 		colLength := lengths[i]
-		colPtr := (*[maxSize]byte)(unsafe.Pointer(rowPtr[i]))
+		col := (*(*[maxSize]byte)(unsafe.Pointer(colPtr)))[:colLength]
 		start := len(arena)
-		arena = append(arena, colPtr[:colLength]...)
+		arena = append(arena, col...)
 		typ, err := sqltypes.MySQLToType(int64(cfields[i]._type), int64(cfields[i].flags))
 		if err != nil {
 			return nil, err
