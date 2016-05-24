@@ -303,7 +303,7 @@ func (conn *Connection) FetchNext() (row []sqltypes.Value, err error) {
 	if vtrow.has_error != 0 {
 		return nil, conn.lastError("")
 	}
-	rowPtr := (*[maxSize]*[maxSize]byte)(unsafe.Pointer(vtrow.mysql_row))
+	rowPtr := (*[maxSize]*C.char)(unsafe.Pointer(vtrow.mysql_row))
 	if rowPtr == nil {
 		return nil, nil
 	}
@@ -317,11 +317,11 @@ func (conn *Connection) FetchNext() (row []sqltypes.Value, err error) {
 	}
 	arena := make([]byte, 0, int(totalLength))
 	for i := 0; i < colCount; i++ {
-		colLength := lengths[i]
-		colPtr := rowPtr[i]
-		if colPtr == nil {
+		if rowPtr[i] == nil {
 			continue
 		}
+		colLength := lengths[i]
+		colPtr := (*[maxSize]byte)(unsafe.Pointer(rowPtr[i]))
 		start := len(arena)
 		arena = append(arena, colPtr[:colLength]...)
 		typ, err := sqltypes.MySQLToType(int64(cfields[i]._type), int64(cfields[i].flags))
