@@ -315,24 +315,24 @@ func (conn *Connection) FetchNext() (row []sqltypes.Value, err error) {
 	for i := 0; i < colCount; i++ {
 		totalLength += lengths[i]
 	}
-	arena := make([]byte, 0, int(totalLength))
+	arena := make([]byte, int(totalLength))
 	for i, colPtr := range rowPtr {
 		if colPtr == nil {
 			continue
 		}
 		colLength := lengths[i]
 		col := (*(*[maxSize]byte)(unsafe.Pointer(colPtr)))[:colLength]
-		start := len(arena)
-		arena = append(arena, col...)
+		n := copy(arena, col)
+		if n != int(colLength) {
+			panic(fmt.Errorf("lengths differ: n = %d, colLength = %d", n, colLength))
+		}
+		col, arena = arena[:n], arena[n:]
 		typ, err := sqltypes.MySQLToType(int64(cfields[i]._type), int64(cfields[i].flags))
 		if err != nil {
 			return nil, err
 		}
 		// MySQL values can be trusted.
-		row[i] = sqltypes.MakeTrusted(
-			typ,
-			arena[start:start+int(colLength)],
-		)
+		row[i] = sqltypes.MakeTrusted(typ, col)
 	}
 	return row, nil
 }
