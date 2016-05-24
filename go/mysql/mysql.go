@@ -321,11 +321,11 @@ func (conn *Connection) FetchNext() (row []sqltypes.Value, err error) {
 			continue
 		}
 		colLength := lengths[i]
-		col := (*(*[maxSize]byte)(unsafe.Pointer(colPtr)))[:colLength]
-		n := copy(arena, col)
+		n := ccopy(arena, colPtr, int(colLength))
 		if n != int(colLength) {
 			panic(fmt.Errorf("lengths differ: n = %d, colLength = %d", n, colLength))
 		}
+		var col []byte
 		col, arena = arena[:n], arena[n:]
 		typ, err := sqltypes.MySQLToType(int64(cfields[i]._type), int64(cfields[i].flags))
 		if err != nil {
