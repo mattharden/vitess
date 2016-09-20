@@ -404,6 +404,12 @@ func (conn *Connection) Shutdown() {
 	C.vt_shutdown(&conn.c)
 }
 
+func ccopy(arena []byte, ptr *C.char, length int) int {
+	col := (*(*[maxSize]byte)(unsafe.Pointer(ptr)))[:length]
+	n := copy(arena, col)
+	return n
+}
+
 func cfree(str *C.char) {
 	if str != nil {
 		C.free(unsafe.Pointer(str))
